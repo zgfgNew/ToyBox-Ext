@@ -8,7 +8,7 @@
 MODDIR=${0%/*}
 
 # Log file for debugging
-LogFile="$MODDIR/service.log"
+LogFile="$MODDIR/action.log"
 exec 3>&1 4>&2 2>$LogFile 1>&2
 set -x
 
@@ -24,39 +24,6 @@ magisk -c
 echo $APATCH
 getprop ro.product.cpu.abi
 getprop ro.product.cpu.abilist
-
-# Log results for stock ToyBox
-TB=toybox
-$TB --version
-TBBIN=$(which $TB)
-ls -lZ $TBBIN
-TBDIR=$(echo "$TBBIN" | sed "s,/$TB$,,")
-TBEXT=toybox-ext
-if [ -d $TBDIR ]
-then
-  cd $TBDIR
-  pwd
-  ls -la | grep $TB | grep -v $TBEXT | grep ^lr.x | rev | cut -d ' ' -f 3 | rev
-  ls -la | grep $TB | grep -v $TBEXT | grep ^lr.x | wc -l
-fi
-
-# Log results for ToyBox-Ext
-$TBEXT --version
-TBEXTBIN=$(which $TBEXT)
-ls -lZ $TBEXTBIN
-TBEXTDIR=$(echo "$TBEXTBIN" | sed "s,/$TBEXT$,,")
-if [ -d $TBEXTDIR ]
-then
-  cd $TBEXTDIR
-  pwd
-  ls -la | grep $TBEXT | grep ^lr.x | rev | cut -d ' ' -f 3 | rev
-  ls -la | grep $TBEXT | grep ^lr.x | wc -l
-  if [ "$TBEXTDIR" != "$TBDIR" ]
-  then
-    ls -la | grep $TB | grep -v $TBEXT | grep ^lr.x | rev | cut -d ' ' -f 3 | rev
-    ls -la | grep $TB | grep -v $TBEXT | grep ^lr.x | wc -l
-  fi
-fi
 
 # Source the original toybox binary type and last download time
 cd $MODDIR
@@ -81,16 +48,6 @@ WAITTIME=$((15 * 24 * 3600))
 # If waiting time passed, download the latest binary again
 if [ -n $TBTYPE ] && [ $PASSEDTIME -gt $WAITTIME ]
 then
-  # Wait to finish booting
-  until [ "$(getprop sys.boot_completed)" = 1 ]
-  do
-    sleep 1
-  done
-
-  # Wait few additional seconds
-  sleep 3
-  rm -f $TBTYPE
-  
   # Find busybox binary
   BB=busybox
   BBBIN=$(which $BB)
@@ -116,7 +73,7 @@ fi
 if [ -n $TBTYPE ] && [ -f $TBTYPE ]
 then
   # Compare checksums for the old and new binary
-  MD5Old=$(md5sum $TBEXT | head -c 32)
+  MD5Old=$(md5sum toybox-ext | head -c 32)
   MD5New=$(md5sum "$TBTYPE" | head -c 32)
   if [ "$MD5New" = "$MD5Old" ]
   then

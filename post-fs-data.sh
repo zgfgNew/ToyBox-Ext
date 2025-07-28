@@ -12,9 +12,12 @@ LogFile="$MODDIR/post-fs-data.log"
 exec 3>&1 4>&2 2>$LogFile 1>&2
 set -x
 
-# Log Magisk version and magisk --path
+# Log info
+whoami
 magisk -c
-magisk --path
+echo $APATCH
+getprop ro.product.cpu.abi
+getprop ro.product.cpu.abilist
 
 # Source the original toybox binary type
 cd $MODDIR

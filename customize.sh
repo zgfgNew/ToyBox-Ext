@@ -4,7 +4,7 @@
 # Copyright (c) zgfg @ xda, 2022-
 # GitHub source: https://github.com/zgfg/ToyBox-Ext
 
-if [ -z $BOOTMODE ] ||  [ "$BOOTMODE" != "true" ] 
+if [ -z $BOOTMODE ] || [ "$BOOTMODE" != "true" ] 
 then
   abort "ERROR: Install from Magisk app, not from TWRP!"
 fi
@@ -15,13 +15,12 @@ if [ ! -z $LogFile ]
 then
   exec 3>&1 4>&2 2>$LogFile 1>&2
   set -x
+  
+  # Log info
   date +%c
-  
-  # Log Magisk version and magisk --path
+  whoami
   magisk -c
-  magisk --path
-  
-  # Log dual-slots ROM info
+  echo $APATCH
   getprop ro.product.cpu.abi
   getprop ro.product.cpu.abilist
 fi
@@ -51,7 +50,7 @@ do
     chmod 755 $TB
     Applets=$(./$TB)
 
-    if [ ! -z "$Applets" ]
+    if [ -n "$Applets" ]
     then
       # Applicable binary found
       TBTYPE=$TB
@@ -85,9 +84,32 @@ TBSCRIPT='./tbtype.sh'
 echo "TBTYPE=$TBTYPE" > $TBSCRIPT
 echo "LASTDLTIME=$DLTIME" >> $TBSCRIPT
 
-# Download latest binary
+# Find busybox binary
+BB=busybox
+BBBIN=$(which $BB)
+if [ -z $BBBIN ]
+then
+  DATA=/data/adb
+  MODULES=$DATA/modules
+  for Path in $MODULES/BuiltIn-BusyBox/$BB $MODULES/busybox-ndk/system/*/$BB $DATA/magisk/$BB $DATA/ap/bin/$BB $DATA/ksu/bin/$BB
+  do
+    if [ -x $Path ]
+    then
+      BBBIN=$Path
+      break
+    fi
+  done
+fi
+if [ -n $BBBIN ]
+then
+  echo "$BBBIN found"
+else
+  echo "BusyBox binary not found"
+fi
+
+# Download latest toybox binary
 echo "Downloading latest $TBTYPE"
-wget -c -T 10 "http://landley.net/toybox/bin/$TBTYPE"
+$BBBIN wget -c -T 10 "http://landley.net/toybox/bin/$TBTYPE"
 
 # Test the download 
 if [ ! -f $TBTYPE ]
